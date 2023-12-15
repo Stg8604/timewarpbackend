@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: timewarp-server
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: timewarp
+      auto-index-creation: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            clientId: your-google-client-id
+            clientSecret: your-google-client-secret
+
+  sendgrid:
+    api-key: your api-key
+    sender-email: your email
+    email-verification-template-id: your template id
+    forgot-password-template-id: your template id
+
+cors:
+  enabled: true
+  allowed-origin: http://localhost:8000
+
+jwt:
+  secret: 'example'
+
+base-url: http://localhost:8080
+frontend-domain: http://localhost:8000
+
+recaptcha:
+  keys:
+    on: false
+    secret: ""
+    threshold: ""
