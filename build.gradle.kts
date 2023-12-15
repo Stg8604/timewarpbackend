@@ -58,3 +58,19 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         ktlint()
     }
 }
+
+task("preCommitHook") {
+    println("PreCommitHook")
+    exec {
+        commandLine("cp", "./.githooks/pre-commit", "./.git/hooks")
+    }
+    println("Added")
+}
+
+task("commitMsgHook") {
+    println("commitMsgHook")
+    exec {
+        commandLine("cp", "./.githooks/commit-msg", "./.git/hooks")
+    }
+    println("Added")
+}

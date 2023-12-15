@@ -1,5 +1,10 @@
 package delta.timewarp.server.user
 
+import delta.timewarp.server.user.dtos.ActivateUserRequestDTO
+import delta.timewarp.server.user.dtos.ForgotPasswordDTO
+import delta.timewarp.server.user.dtos.LoginDTO
+import delta.timewarp.server.user.dtos.RegisterDTO
+import delta.timewarp.server.user.dtos.ResetPasswordDTO
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Autowired
@@ -10,15 +15,10 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import delta.timewarp.server.user.dtos.ActivateUserRequestDTO
-import delta.timewarp.server.user.dtos.ForgotPasswordDTO
-import delta.timewarp.server.user.dtos.LoginDTO
-import delta.timewarp.server.user.dtos.RegisterDTO
-import delta.timewarp.server.user.dtos.ResetPasswordDTO
 
 @RestController
 @RequestMapping("api")
-class AuthController(
+class UserController(
     @Autowired private val userService: UserService,
     @Autowired private val request: HttpServletRequest
 ) {
@@ -58,4 +58,3 @@ class AuthController(
         return userService.resetPassword(body)
     }
 }
-

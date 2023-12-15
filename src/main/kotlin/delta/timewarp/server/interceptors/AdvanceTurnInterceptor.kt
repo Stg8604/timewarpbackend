@@ -1,8 +1,8 @@
 package delta.timewarp.server.interceptors
 
+// import org.springframework.security.core.context.SecurityContextHolder
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-//import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.HandlerInterceptor
 import org.springframework.web.servlet.ModelAndView
@@ -14,7 +14,6 @@ class AdvanceTurnInterceptor : HandlerInterceptor {
         response: HttpServletResponse,
         handler: Any
     ): Boolean {
-
         return true
     }
 
@@ -24,6 +23,7 @@ class AdvanceTurnInterceptor : HandlerInterceptor {
         handler: Any,
         modelAndView: ModelAndView?
     ) {
-//        val userDetails = SecurityContextHolder.getContext().authentication.principal as UserEntity
+        //        val userDetails = SecurityContextHolder.getContext().authentication.principal as
+        // UserEntity
     }
 }

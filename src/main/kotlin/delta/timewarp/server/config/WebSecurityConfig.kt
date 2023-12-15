@@ -1,5 +1,10 @@
 package delta.timewarp.server.config
 
+import delta.timewarp.server.user.UserService
+import delta.timewarp.server.user.oauth2.CustomOAuth2FailureHandler
+import delta.timewarp.server.user.oauth2.CustomOAuth2SuccessHandler
+import delta.timewarp.server.user.oauth2.CustomOAuth2UserService
+import delta.timewarp.server.user.oauth2.CustomOidcUserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -10,11 +15,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
-import delta.timewarp.server.user.UserService
-import delta.timewarp.server.user.oauth2.CustomOAuth2FailureHandler
-import delta.timewarp.server.user.oauth2.CustomOAuth2SuccessHandler
-import delta.timewarp.server.user.oauth2.CustomOAuth2UserService
-import delta.timewarp.server.user.oauth2.CustomOidcUserService
 
 @Configuration
 @EnableWebSecurity

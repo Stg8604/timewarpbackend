@@ -14,7 +14,7 @@ data class UserEntity(
     @Indexed(unique = true) val email: String,
     val loginType: LoginType,
     var password: String,
-    var isEnabled: Boolean = false,
+    var isEnabled: Boolean = false
 ) {
     fun comparePassword(password: String): Boolean {
         return BCryptPasswordEncoder().matches(password, this.password)

@@ -1,5 +1,20 @@
 package delta.timewarp.server.user
 
+import delta.timewarp.server.dtos.ErrorMessageDTO
+import delta.timewarp.server.dtos.MessageDTO
+import delta.timewarp.server.exception.CustomAuthException
+import delta.timewarp.server.exception.CustomException
+import delta.timewarp.server.sendgrid.SendGridService
+import delta.timewarp.server.user.activateUser.ActivateUserEntity
+import delta.timewarp.server.user.activateUser.ActivateUserRepository
+import delta.timewarp.server.user.dtos.ActivateUserRequestDTO
+import delta.timewarp.server.user.dtos.ForgotPasswordDTO
+import delta.timewarp.server.user.dtos.LoginDTO
+import delta.timewarp.server.user.dtos.RegisterDTO
+import delta.timewarp.server.user.dtos.ResetPasswordDTO
+import delta.timewarp.server.user.enums.LoginType
+import delta.timewarp.server.user.forgotPassword.ForgotPasswordEntity
+import delta.timewarp.server.user.forgotPassword.ForgotPasswordRepository
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import jakarta.servlet.Filter
@@ -21,21 +36,6 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Service
-import delta.timewarp.server.exception.CustomAuthException
-import delta.timewarp.server.exception.CustomException
-import delta.timewarp.server.sendgrid.SendGridService
-import delta.timewarp.server.user.activateUser.ActivateUserEntity
-import delta.timewarp.server.user.activateUser.ActivateUserRepository
-import delta.timewarp.server.user.forgotPassword.ForgotPasswordEntity
-import delta.timewarp.server.user.forgotPassword.ForgotPasswordRepository
-import delta.timewarp.server.user.dtos.ActivateUserRequestDTO
-import delta.timewarp.server.user.dtos.ForgotPasswordDTO
-import delta.timewarp.server.user.dtos.LoginDTO
-import delta.timewarp.server.user.dtos.RegisterDTO
-import delta.timewarp.server.user.dtos.ResetPasswordDTO
-import delta.timewarp.server.dtos.ErrorMessageDTO
-import delta.timewarp.server.dtos.MessageDTO
-import delta.timewarp.server.user.enums.LoginType
 import java.io.IOException
 import java.util.Date
 import java.util.UUID
@@ -51,6 +51,9 @@ class UserService(
 
     @Value("\${jwt.secret}")
     private lateinit var secret: String
+
+    @Value("\${production}")
+    private lateinit var production: String
 
     fun checkEmailValidity(email: String): Boolean {
         val emailRegex =
@@ -73,10 +76,7 @@ class UserService(
 
     fun register(body: RegisterDTO, ip: String): ResponseEntity<Any> {
         if (listOf(body.username, body.email, body.password).any { it.isBlank() }) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Please fill in all fields"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Please fill in all fields")
         }
         if (body.username.length < 3 || body.username.length > 15) {
             throw CustomAuthException(
@@ -85,23 +85,14 @@ class UserService(
             )
         }
         if (!checkEmailValidity(body.email)) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Invalid email address!"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Invalid email address!")
         }
         if (userRepository.findByEmail(body.email) != null) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Email is already registered"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Email is already registered")
         }
         val captchaValid = captchaService.validateCaptcha(body.token, ip)
         if (!captchaValid) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Captcha Failed, try again later"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Captcha Failed, try again later")
         }
         val user =
             UserEntity(
@@ -110,7 +101,7 @@ class UserService(
                 username = body.username,
                 password = encodePassword(body.password),
                 loginType = LoginType.PASSWORD,
-                isEnabled = false
+                isEnabled = !production.toBoolean()
             )
         userRepository.save(user)
         val userId = userRepository.findByEmail(body.email)!!.id
@@ -144,17 +135,11 @@ class UserService(
     fun activateUser(body: ActivateUserRequestDTO): ResponseEntity<Any> {
         val user =
             userRepository.findById(UUID.fromString(body.userId)).orElseThrow {
-                throw CustomException(
-                    HttpStatus.BAD_REQUEST,
-                    "User not Found"
-                )
+                throw CustomException(HttpStatus.BAD_REQUEST, "User not Found")
             }
         val unactivatedUser: ActivateUserEntity =
             activateUserRepository.findByToken(body.token)
-                ?: throw CustomAuthException(
-                    HttpStatus.BAD_REQUEST,
-                    "Activation Token Not Found!"
-                )
+                ?: throw CustomAuthException(HttpStatus.BAD_REQUEST, "Activation Token Not Found!")
         if (unactivatedUser.expiration < Date(System.currentTimeMillis())) {
             userRepository.delete(user)
             throw CustomAuthException(
@@ -170,41 +155,23 @@ class UserService(
 
     fun login(body: LoginDTO, response: HttpServletResponse, ip: String): ResponseEntity<Any> {
         if (listOf(body.email, body.password).any { it.isBlank() }) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Please fill in all fields"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Please fill in all fields")
         }
         val user =
             userRepository.findByEmail(body.email)
-                ?: throw CustomAuthException(
-                    HttpStatus.BAD_REQUEST,
-                    "User not found!"
-                )
+                ?: throw CustomAuthException(HttpStatus.BAD_REQUEST, "User not found!")
         if (!user.comparePassword(body.password)) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Invalid Credentials!"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Invalid Credentials!")
         }
         if (!user.isEnabled) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Please Verify Your Email First"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Please Verify Your Email First")
         }
         if (user.loginType != LoginType.PASSWORD) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Invalid login type!"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Invalid login type!")
         }
         val captchaValid = captchaService.validateCaptcha(body.token, ip)
         if (!captchaValid) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Captcha Failed, try again later"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Captcha Failed, try again later")
         }
         return ResponseEntity.ok(generateJwtToken(user.id))
     }
@@ -212,28 +179,16 @@ class UserService(
     fun forgotPasswordEmail(body: ForgotPasswordDTO): ResponseEntity<Any> {
         val forgotPasswordUser =
             forgotPasswordRepository.findByEmail(body.email)
-                ?: throw CustomAuthException(
-                    HttpStatus.BAD_REQUEST,
-                    "User Not Found"
-                )
+                ?: throw CustomAuthException(HttpStatus.BAD_REQUEST, "User Not Found")
         val user =
             userRepository.findByEmail(body.email)
-                ?: throw CustomAuthException(
-                    HttpStatus.BAD_REQUEST,
-                    " Please Register First"
-                )
+                ?: throw CustomAuthException(HttpStatus.BAD_REQUEST, " Please Register First")
         if (!user.isEnabled) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                " Please Verify Your Email First"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, " Please Verify Your Email First")
         }
 
         if (user.loginType == LoginType.GOOGLE_OAUTH) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                " Can't Change Password!"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, " Can't Change Password!")
         }
 
         forgotPasswordUser.token = UUID.randomUUID().toString()
@@ -247,21 +202,12 @@ class UserService(
     fun resetPassword(body: ResetPasswordDTO): ResponseEntity<Any> {
         val resetUserPassword =
             forgotPasswordRepository.findByToken(body.token)
-                ?: throw CustomAuthException(
-                    HttpStatus.BAD_REQUEST,
-                    "User Not found!"
-                )
+                ?: throw CustomAuthException(HttpStatus.BAD_REQUEST, "User Not found!")
         val user =
             userRepository.findByEmail(resetUserPassword.email)
-                ?: throw CustomAuthException(
-                    HttpStatus.BAD_REQUEST,
-                    "User Not found"
-                )
+                ?: throw CustomAuthException(HttpStatus.BAD_REQUEST, "User Not found")
         if (resetUserPassword.expiration < Date(System.currentTimeMillis())) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Expiration Time Exceeded"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Expiration Time Exceeded")
         }
 
         user.password = encodePassword(body.password)
@@ -272,10 +218,7 @@ class UserService(
     fun oAuth2Login(email: String, username: String): String {
         val user = userRepository.findByEmail(email)
         if (user != null && user.loginType != LoginType.GOOGLE_OAUTH) {
-            throw CustomAuthException(
-                HttpStatus.BAD_REQUEST,
-                "Invalid login type!"
-            )
+            throw CustomAuthException(HttpStatus.BAD_REQUEST, "Invalid login type!")
         }
         val userId = user?.id ?: createUserWithOAuth(email, username)
         return generateJwtToken(userId)
@@ -300,33 +243,19 @@ class UserService(
     fun user(jwt: String?): ResponseEntity<Any> {
         try {
             if (jwt == null) {
-                throw CustomAuthException(
-                    HttpStatus.UNAUTHORIZED,
-                    "Unauthenticated"
-                )
+                throw CustomAuthException(HttpStatus.UNAUTHORIZED, "Unauthenticated")
             }
             val body = Jwts.parser().setSigningKey(secret.toByteArray()).parseClaimsJws(jwt).body
             val user =
                 userRepository.findById(UUID.fromString(body.issuer)).orElseThrow {
-                    throw CustomAuthException(
-                        HttpStatus.BAD_REQUEST,
-                        "User not found"
-                    )
+                    throw CustomAuthException(HttpStatus.BAD_REQUEST, "User not found")
                 }
             return ResponseEntity.ok("Authenticated!")
         } catch (e: Exception) {
             if (e is CustomAuthException) {
-                return ResponseEntity.status(e.status).body(
-                    ErrorMessageDTO(
-                        e.message.toString()
-                    )
-                )
+                return ResponseEntity.status(e.status).body(ErrorMessageDTO(e.message.toString()))
             }
-            return ResponseEntity.internalServerError().body(
-                ErrorMessageDTO(
-                    "Internal Server Error"
-                )
-            )
+            return ResponseEntity.internalServerError().body(ErrorMessageDTO("Internal Server Error"))
         }
     }
 
@@ -351,7 +280,6 @@ class UserService(
         return registration
     }
 }
-
 
 class JWTFilter(
     @Autowired private val userRepository: UserRepository,
@@ -388,10 +316,7 @@ class JWTFilter(
 
             val userDetails =
                 userRepository.findById(UUID.fromString(userid)).orElseThrow {
-                    throw CustomAuthException(
-                        HttpStatus.BAD_REQUEST,
-                        "User not found"
-                    )
+                    throw CustomAuthException(HttpStatus.BAD_REQUEST, "User not found")
                 }
             val usernamePasswordAuthenticationToken =
                 UsernamePasswordAuthenticationToken(userDetails, null, null)

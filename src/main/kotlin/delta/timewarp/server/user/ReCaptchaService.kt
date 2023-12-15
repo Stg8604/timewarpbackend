@@ -1,9 +1,9 @@
 package delta.timewarp.server.user
 
+import delta.timewarp.server.user.dtos.CaptchaDTO
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestTemplate
-import delta.timewarp.server.user.dtos.CaptchaDTO
 import java.net.URI
 
 @Service
@@ -19,7 +19,7 @@ class ReCaptchaService {
     private lateinit var recaptchaToggle: String
 
     fun validateCaptcha(token: String, ip: String): Boolean {
-        if(!recaptchaToggle.toBoolean()) return true
+        if (!recaptchaToggle.toBoolean()) return true
         val restTemplate = RestTemplate()
         val verifyUri: URI =
             URI.create(

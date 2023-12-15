@@ -1,0 +1,10 @@
+#!/bin/sh
+
+./gradlew spotlessCheck
+if [ $? != 0 ]; then    
+    echo -e "\e[31mLinting Check Failed...\e[0m"
+    exit 1
+else
+    echo -e "\e[32mLinting Check Passed...\e[0m"
+    exit 0
+fi

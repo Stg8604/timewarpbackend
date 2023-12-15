@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+
+commit_types="(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|wip)"
+convetional_commit_regex="^${commit_types}(\([a-z \-]+\))?!?: .+$"
+commit_message=$(cat "$1")
+if [[ $commit_message =~ $convetional_commit_regex ]]
+then
+ echo -e "\e[32mCommit message meets Conventional Commit standards...\e[0m"
+ exit 0
+fi
+
+echo -e "\e[31mThe commit message does not meet the Conventional Commit standard\e[0m"
+echo "Types: : ${commit_types}"
+echo "<type(<scope>):> <subject> (Max 50 char) "
+
+exit 1

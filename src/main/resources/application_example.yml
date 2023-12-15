@@ -36,3 +36,5 @@ recaptcha:
     on: false
     secret: ""
     threshold: ""
+
+production: "false"

@@ -32,13 +32,18 @@ class SendGridService {
     @Value("\${frontend-domain}")
     private lateinit var frontendDomainUrl: String
 
+    @Value("\${production}")
+    private lateinit var production: String
+
     fun activateUserEmail(userId: UUID, token: String, name: String, email: String) {
+        if (!production.toBoolean()) return
         val link = "$frontendDomainUrl/activate/?userid=$userId&token=$token"
         val emailTo = email
         sendTemplateEmail(emailTo, name, link, activateUserTemplateId)
     }
 
     fun forgotUserEmail(token: String, email: String) {
+        if (!production.toBoolean()) return
         val link = "$frontendDomainUrl/reset-password/?token=$token"
         val emailTo = email
         val name = ""

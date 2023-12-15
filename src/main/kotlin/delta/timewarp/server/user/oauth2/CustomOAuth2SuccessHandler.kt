@@ -1,5 +1,7 @@
 package delta.timewarp.server.user.oauth2
 
+import delta.timewarp.server.exception.CustomException
+import delta.timewarp.server.user.UserService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.Logger
@@ -10,8 +12,6 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.stereotype.Component
-import delta.timewarp.server.exception.CustomException
-import delta.timewarp.server.user.UserService
 
 @Component
 class CustomOAuth2SuccessHandler(@Autowired private val authService: UserService) :
@@ -20,8 +20,7 @@ class CustomOAuth2SuccessHandler(@Autowired private val authService: UserService
     @Value("\${frontend-domain}")
     private lateinit var frontenddomainurl: String
 
-    private val logger: Logger = LoggerFactory.getLogger(
-        CustomOAuth2SuccessHandler::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(CustomOAuth2SuccessHandler::class.java)
 
     override fun onAuthenticationSuccess(
         request: HttpServletRequest?,
