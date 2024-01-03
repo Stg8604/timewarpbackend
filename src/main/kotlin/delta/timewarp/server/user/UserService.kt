@@ -101,6 +101,8 @@ class UserService(
                 username = body.username,
                 password = encodePassword(body.password),
                 loginType = LoginType.PASSWORD,
+                college = body.email,
+                phonenumber = body.phonenumber,
                 isEnabled = !production.toBoolean()
             )
         userRepository.save(user)
@@ -115,7 +117,6 @@ class UserService(
                 expiration = Date(System.currentTimeMillis())
             )
         forgotPasswordRepository.save(forgotPasswordUser)
-
         return ResponseEntity.ok(MessageDTO("Registered successfully! You can login now!"))
     }
 
@@ -232,6 +233,8 @@ class UserService(
                 email = email,
                 username = username,
                 loginType = LoginType.GOOGLE_OAUTH,
+                college = "",
+                phonenumber = "",
                 isEnabled = true
             )
         userRepository.save(user)

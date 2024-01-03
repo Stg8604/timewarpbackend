@@ -14,6 +14,8 @@ data class UserEntity(
     @Indexed(unique = true) val email: String,
     val loginType: LoginType,
     var password: String,
+    var college: String,
+    var phonenumber: String,
     var isEnabled: Boolean = false
 ) {
     fun comparePassword(password: String): Boolean {
